@@ -30,7 +30,7 @@ let pc = particlesCursor({
   pointSize: 7, // крупнее частицы
   pointDecay: 0.0015, // дольше "живут"
   sleepRadiusX: 1000,
-  sleepRadiusY: 1000,
+  sleepRadiusY: 1001,
   sleepTimeCoefX: 0.0007 + Math.random() * 0.00001, // рандомное направление X
   sleepTimeCoefY: 0.0009 + Math.random() * 0.00004 // рандомное направление Y
 })
