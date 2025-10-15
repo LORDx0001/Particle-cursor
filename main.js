@@ -1,6 +1,7 @@
 import { particlesCursor } from 'https://unpkg.com/threejs-toys@0.0.8/build/threejs-toys.module.cdn.min.js'
 
-const baseColors = [0x00ff00, 0x0000ff, 0x00ffff, 0xffff00, 0x8000ff, 0xff8000];
+// Только синий и фиолетовый цвета
+const baseColors = [0x0000ff, 0x191970, 0x483d8b, 0x6a5acd, 0x8a2be2, 0x8000ff, 0x4b0082];
 
 function hexToRgb(hex) {
   return [
@@ -20,19 +21,82 @@ function lerp(a, b, t) {
 
 let pc = particlesCursor({
   el: document.getElementById('app'),
-  gpgpuSize: 512,
+  gpgpuSize: 512, // меньше, чтобы частицы были плотнее
   colors: baseColors,
   color: baseColors[0],
-  coordScale: 0.5,
-  noiseIntensity: 0.001,
-  noiseTimeCoeff: 0.0001,
-  pointSize: 5,
-  pointDecay: 0.0025,
-  sleepRadiusX: 250,
-  sleepRadiusY: 250,
-  sleepTimeCoefX: 0.001,
-  sleepTimeCoefY: 0.002
+  coordScale: 0.18, // плотнее к курсору
+  noiseIntensity: 0.0005, // мягче движение
+  noiseTimeCoeff: 0.00005, // плавнее
+  pointSize: 7, // крупнее частицы
+  pointDecay: 0.0015, // дольше "живут"
+  sleepRadiusX: 1000,
+  sleepRadiusY: 1000,
+  sleepTimeCoefX: 0.0007 + Math.random() * 0.00001, // рандомное направление X
+  sleepTimeCoefY: 0.0009 + Math.random() * 0.00004 // рандомное направление Y
 })
+
+// Плавно и рандомно меняем sleepRadiusX/Y для динамики
+function animateSleepRadius() {
+  if (pc.uniforms && pc.uniforms.uSleepRadiusX && pc.uniforms.uSleepRadiusY) {
+    // Плавная синусоида + рандом
+    const t = performance.now() / 1000;
+    const base = 120 + Math.sin(t * 0.7) * 80;
+    const randX = base + Math.sin(t * 1.3 + Math.random()) * 60 + Math.random() * 40;
+    const randY = base + Math.cos(t * 1.1 + Math.random()) * 60 + Math.random() * 40;
+    pc.uniforms.uSleepRadiusX.value = randX;
+    pc.uniforms.uSleepRadiusY.value = randY;
+  }
+  requestAnimationFrame(animateSleepRadius);
+}
+animateSleepRadius();
+
+
+
+// Движение линии как у "дракона": плавно лететь к случайной цели
+let lastMove = Date.now();
+let autoMove = false;
+let pointer = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+let target = { x: Math.random() * window.innerWidth, y: Math.random() * window.innerHeight };
+
+window.addEventListener('mousemove', (e) => {
+  pointer.x = e.clientX;
+  pointer.y = e.clientY;
+  lastMove = Date.now();
+  autoMove = false;
+});
+
+function pickNewTarget() {
+  const margin = 40;
+  // Случайная точка и случайный угол
+  const angle = Math.random() * Math.PI * 2;
+  const radius = 100 + Math.random() * (Math.min(window.innerWidth, window.innerHeight) / 2 - 100);
+  const cx = margin + Math.random() * (window.innerWidth - margin * 2);
+  const cy = margin + Math.random() * (window.innerHeight - margin * 2);
+  target.x = cx + Math.cos(angle) * radius;
+  target.y = cy + Math.sin(angle) * radius;
+}
+
+function animatePointer() {
+  const now = Date.now();
+  if (now - lastMove > 1200) {
+    autoMove = true;
+  }
+  if (autoMove) {
+    // Плавно летим к цели
+    pointer.x += (target.x - pointer.x) * 0.04;
+    pointer.y += (target.y - pointer.y) * 0.04;
+    // Если близко к цели — новая цель
+    if (Math.hypot(pointer.x - target.x, pointer.y - target.y) < 24) {
+      pickNewTarget();
+    }
+  }
+  if (pc.uniforms && pc.uniforms.uPointer) {
+    pc.uniforms.uPointer.value.x = pointer.x;
+    pc.uniforms.uPointer.value.y = pointer.y;
+  }
+  requestAnimationFrame(animatePointer);
+}
+animatePointer();
 
 let colorTargets = pc.uniforms.uColors.value.map((c, i) => {
   const hex = c.getHex();
@@ -65,7 +129,7 @@ updateColorsLerp();
 
 document.body.addEventListener('click', () => {
   colorTargets.forEach(c => c.target = hexToRgb(baseColors[Math.floor(Math.random() * baseColors.length)]));
-  pc.uniforms.uCoordScale.value = 0.001 + Math.random() * 2
-  pc.uniforms.uNoiseIntensity.value = 0.0001 + Math.random() * 0.01
-  pc.uniforms.uPointSize.value = 1 + Math.random() * 10
+  pc.uniforms.uCoordScale.value = 0.001 + Math.random() * 2;
+  pc.uniforms.uNoiseIntensity.value = 0.0001 + Math.random() * 0.01;
+  pc.uniforms.uPointSize.value = 1 + Math.random() * 10;
 })
