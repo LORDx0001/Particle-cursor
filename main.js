@@ -137,10 +137,10 @@ function animatePointer() {
   if (now - lastMove > 1200) {
     autoMove = true;
   }
-  // Медленнее на мобильных и планшетах
+  // Очень медленно на мобильных, чуть быстрее на планшете
   let speed = 0.03;
-  if (isMobile()) speed = 0.012;
-  else if (isTablet()) speed = 0.018;
+  if (isMobile()) speed = 0.005;
+  else if (isTablet()) speed = 0.012;
   if (autoMove) {
     pointer.x += (target.x - pointer.x) * speed;
     pointer.y += (target.y - pointer.y) * speed;
@@ -158,8 +158,8 @@ animatePointer();
 
 function animatePointer2() {
   let speed = 0.03;
-  if (isMobile()) speed = 0.012;
-  else if (isTablet()) speed = 0.018;
+  if (isMobile()) speed = 0.005;
+  else if (isTablet()) speed = 0.012;
   const now = Date.now();
   if (now - lastMove > 1200) {
     pointer2.x += (target2.x - pointer2.x) * speed;
