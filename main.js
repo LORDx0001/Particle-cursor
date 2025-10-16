@@ -19,6 +19,14 @@ function lerp(a, b, t) {
   return a + (b - a) * t;
 }
 
+// --- Адаптивные функции ---
+function isMobile() {
+  return window.innerWidth <= 600;
+}
+function isTablet() {
+  return window.innerWidth > 600 && window.innerWidth <= 900;
+}
+
 // --- Создаём два хвоста ---
 let pc = particlesCursor({
   el: document.getElementById('app'),
@@ -54,7 +62,6 @@ let pc2 = particlesCursor({
 
 // --- Адаптивная подстройка при изменении размера окна ---
 function resizeParticles() {
-  // Можно пересоздать объекты или обновить параметры
   pc.uniforms.uCoordScale.value = window.innerWidth > 900 ? 0.18 : 0.25;
   pc.uniforms.uPointSize.value = window.innerWidth > 900 ? 7 : 4;
   pc2.uniforms.uCoordScale.value = window.innerWidth > 900 ? 0.22 : 0.3;
@@ -90,8 +97,10 @@ window.addEventListener('mousemove', (e) => {
   pointer.y = e.clientY;
   lastMove = Date.now();
   autoMove = false;
-  // Вторая линия чуть смещается от курсора, смещение зависит от ширины экрана
-  const offset = window.innerWidth > 900 ? 60 : 30;
+  // Смещение второй линии адаптивно
+  let offset = 60;
+  if (isMobile()) offset = 18;
+  else if (isTablet()) offset = 32;
   pointer2.x = e.clientX + offset * Math.sin(Date.now()/400);
   pointer2.y = e.clientY + offset * Math.cos(Date.now()/400);
 });
@@ -99,7 +108,10 @@ window.addEventListener('mousemove', (e) => {
 function pickNewTarget() {
   const margin = 40;
   const angle = Math.random() * Math.PI * 2;
-  const radius = 100 + Math.random() * (Math.min(window.innerWidth, window.innerHeight) / 2 - 100);
+  let radiusBase = 100;
+  if (isMobile()) radiusBase = 30;
+  else if (isTablet()) radiusBase = 60;
+  const radius = radiusBase + Math.random() * (Math.min(window.innerWidth, window.innerHeight) / 2 - radiusBase);
   const cx = margin + Math.random() * (window.innerWidth - margin * 2);
   const cy = margin + Math.random() * (window.innerHeight - margin * 2);
   target.x = cx + Math.cos(angle) * radius;
@@ -109,7 +121,10 @@ function pickNewTarget() {
 function pickNewTarget2() {
   const margin = 40;
   const angle = Math.random() * Math.PI * 2;
-  const radius = 120 + Math.random() * (Math.min(window.innerWidth, window.innerHeight) / 2 - 120);
+  let radiusBase = 120;
+  if (isMobile()) radiusBase = 40;
+  else if (isTablet()) radiusBase = 80;
+  const radius = radiusBase + Math.random() * (Math.min(window.innerWidth, window.innerHeight) / 2 - radiusBase);
   const cx = margin + Math.random() * (window.innerWidth - margin * 2);
   const cy = margin + Math.random() * (window.innerHeight - margin * 2);
   target2.x = cx + Math.cos(angle) * radius;
@@ -121,9 +136,12 @@ function animatePointer() {
   if (now - lastMove > 1200) {
     autoMove = true;
   }
+  let speed = 0.04;
+  if (isMobile()) speed = 0.015;
+  else if (isTablet()) speed = 0.025;
   if (autoMove) {
-    pointer.x += (target.x - pointer.x) * 0.04;
-    pointer.y += (target.y - pointer.y) * 0.04;
+    pointer.x += (target.x - pointer.x) * speed;
+    pointer.y += (target.y - pointer.y) * speed;
     if (Math.hypot(pointer.x - target.x, pointer.y - target.y) < 24) {
       pickNewTarget();
     }
@@ -137,10 +155,13 @@ function animatePointer() {
 animatePointer();
 
 function animatePointer2() {
+  let speed = 0.04;
+  if (isMobile()) speed = 0.015;
+  else if (isTablet()) speed = 0.025;
   const now = Date.now();
   if (now - lastMove > 1200) {
-    pointer2.x += (target2.x - pointer2.x) * 0.04;
-    pointer2.y += (target2.y - pointer2.y) * 0.04;
+    pointer2.x += (target2.x - pointer2.x) * speed;
+    pointer2.y += (target2.y - pointer2.y) * speed;
     if (Math.hypot(pointer2.x - target2.x, pointer2.y - target2.y) < 24) {
       pickNewTarget2();
     }
