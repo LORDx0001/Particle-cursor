@@ -106,27 +106,28 @@ window.addEventListener('mousemove', (e) => {
 });
 
 function pickNewTarget() {
-  const margin = 40;
   const angle = Math.random() * Math.PI * 2;
-  let radiusBase = 100;
-  if (isMobile()) radiusBase = 30;
-  else if (isTablet()) radiusBase = 60;
-  const radius = radiusBase + Math.random() * (Math.min(window.innerWidth, window.innerHeight) / 2 - radiusBase);
-  const cx = margin + Math.random() * (window.innerWidth - margin * 2);
-  const cy = margin + Math.random() * (window.innerHeight - margin * 2);
+  // Радиус цели адаптивно: меньше и ближе к центру на мобильных
+  let radiusBase = 40;
+  if (isMobile()) radiusBase = 10;
+  else if (isTablet()) radiusBase = 20;
+  const maxRadius = Math.min(window.innerWidth, window.innerHeight) / 3;
+  const radius = radiusBase + Math.random() * (maxRadius - radiusBase);
+  const cx = window.innerWidth / 2;
+  const cy = window.innerHeight / 2;
   target.x = cx + Math.cos(angle) * radius;
   target.y = cy + Math.sin(angle) * radius;
 }
 
 function pickNewTarget2() {
-  const margin = 40;
   const angle = Math.random() * Math.PI * 2;
-  let radiusBase = 120;
-  if (isMobile()) radiusBase = 40;
-  else if (isTablet()) radiusBase = 80;
-  const radius = radiusBase + Math.random() * (Math.min(window.innerWidth, window.innerHeight) / 2 - radiusBase);
-  const cx = margin + Math.random() * (window.innerWidth - margin * 2);
-  const cy = margin + Math.random() * (window.innerHeight - margin * 2);
+  let radiusBase = 50;
+  if (isMobile()) radiusBase = 15;
+  else if (isTablet()) radiusBase = 25;
+  const maxRadius = Math.min(window.innerWidth, window.innerHeight) / 3;
+  const radius = radiusBase + Math.random() * (maxRadius - radiusBase);
+  const cx = window.innerWidth / 2;
+  const cy = window.innerHeight / 2;
   target2.x = cx + Math.cos(angle) * radius;
   target2.y = cy + Math.sin(angle) * radius;
 }
@@ -136,13 +137,14 @@ function animatePointer() {
   if (now - lastMove > 1200) {
     autoMove = true;
   }
-  let speed = 0.04;
-  if (isMobile()) speed = 0.015;
-  else if (isTablet()) speed = 0.025;
+  // Медленнее на мобильных и планшетах
+  let speed = 0.03;
+  if (isMobile()) speed = 0.012;
+  else if (isTablet()) speed = 0.018;
   if (autoMove) {
     pointer.x += (target.x - pointer.x) * speed;
     pointer.y += (target.y - pointer.y) * speed;
-    if (Math.hypot(pointer.x - target.x, pointer.y - target.y) < 24) {
+    if (Math.hypot(pointer.x - target.x, pointer.y - target.y) < 18) {
       pickNewTarget();
     }
   }
@@ -155,14 +157,14 @@ function animatePointer() {
 animatePointer();
 
 function animatePointer2() {
-  let speed = 0.04;
-  if (isMobile()) speed = 0.015;
-  else if (isTablet()) speed = 0.025;
+  let speed = 0.03;
+  if (isMobile()) speed = 0.012;
+  else if (isTablet()) speed = 0.018;
   const now = Date.now();
   if (now - lastMove > 1200) {
     pointer2.x += (target2.x - pointer2.x) * speed;
     pointer2.y += (target2.y - pointer2.y) * speed;
-    if (Math.hypot(pointer2.x - target2.x, pointer2.y - target2.y) < 24) {
+    if (Math.hypot(pointer2.x - target2.x, pointer2.y - target2.y) < 18) {
       pickNewTarget2();
     }
   }
