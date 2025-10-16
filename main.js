@@ -19,26 +19,52 @@ function lerp(a, b, t) {
   return a + (b - a) * t;
 }
 
+// --- Создаём два хвоста ---
 let pc = particlesCursor({
   el: document.getElementById('app'),
-  gpgpuSize: 512, // меньше, чтобы частицы были плотнее
+  gpgpuSize: window.innerWidth > 900 ? 600 : 256,
   colors: baseColors,
   color: baseColors[0],
-  coordScale: 0.18, // плотнее к курсору
-  noiseIntensity: 0.0005, // мягче движение
-  noiseTimeCoeff: 0.00005, // плавнее
-  pointSize: 7, // крупнее частицы
-  pointDecay: 0.0015, // дольше "живут"
+  coordScale: window.innerWidth > 900 ? 0.18 : 0.25,
+  noiseIntensity: 0.0005,
+  noiseTimeCoeff: 0.00005,
+  pointSize: window.innerWidth > 900 ? 6 : 4,
+  pointDecay: 0.0009,
   sleepRadiusX: 1000,
   sleepRadiusY: 1001,
-  sleepTimeCoefX: 0.0007 + Math.random() * 0.00001, // рандомное направление X
-  sleepTimeCoefY: 0.0009 + Math.random() * 0.00004 // рандомное направление Y
+  sleepTimeCoefX: 0.0007 + Math.random() * 0.00001,
+  sleepTimeCoefY: 0.0009 + Math.random() * 0.00004
 })
 
-// Плавно и рандомно меняем sleepRadiusX/Y для динамики
+let pc2 = particlesCursor({
+  el: document.getElementById('app'),
+  gpgpuSize: window.innerWidth > 900 ? 256 : 128,
+  colors: baseColors,
+  color: baseColors[2],
+  coordScale: window.innerWidth > 900 ? 0.22 : 0.3,
+  noiseIntensity: 0.001,
+  noiseTimeCoeff: 0.00008,
+  pointSize: window.innerWidth > 900 ? 5 : 3,
+  pointDecay: 0.002,
+  sleepRadiusX: 900,
+  sleepRadiusY: 900,
+  sleepTimeCoefX: 0.0008 + Math.random() * 0.00001,
+  sleepTimeCoefY: 0.001 + Math.random() * 0.00004
+});
+
+// --- Адаптивная подстройка при изменении размера окна ---
+function resizeParticles() {
+  // Можно пересоздать объекты или обновить параметры
+  pc.uniforms.uCoordScale.value = window.innerWidth > 900 ? 0.18 : 0.25;
+  pc.uniforms.uPointSize.value = window.innerWidth > 900 ? 7 : 4;
+  pc2.uniforms.uCoordScale.value = window.innerWidth > 900 ? 0.22 : 0.3;
+  pc2.uniforms.uPointSize.value = window.innerWidth > 900 ? 5 : 3;
+}
+window.addEventListener('resize', resizeParticles);
+
+// --- Анимация sleepRadius только для первой линии ---
 function animateSleepRadius() {
   if (pc.uniforms && pc.uniforms.uSleepRadiusX && pc.uniforms.uSleepRadiusY) {
-    // Плавная синусоида + рандом
     const t = performance.now() / 1000;
     const base = 120 + Math.sin(t * 0.7) * 80;
     const randX = base + Math.sin(t * 1.3 + Math.random()) * 60 + Math.random() * 40;
@@ -50,24 +76,28 @@ function animateSleepRadius() {
 }
 animateSleepRadius();
 
-
-
-// Движение линии как у "дракона": плавно лететь к случайной цели
+// --- Два указателя и цели ---
 let lastMove = Date.now();
 let autoMove = false;
 let pointer = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
 let target = { x: Math.random() * window.innerWidth, y: Math.random() * window.innerHeight };
+
+let pointer2 = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+let target2 = { x: Math.random() * window.innerWidth, y: Math.random() * window.innerHeight };
 
 window.addEventListener('mousemove', (e) => {
   pointer.x = e.clientX;
   pointer.y = e.clientY;
   lastMove = Date.now();
   autoMove = false;
+  // Вторая линия чуть смещается от курсора, смещение зависит от ширины экрана
+  const offset = window.innerWidth > 900 ? 60 : 30;
+  pointer2.x = e.clientX + offset * Math.sin(Date.now()/400);
+  pointer2.y = e.clientY + offset * Math.cos(Date.now()/400);
 });
 
 function pickNewTarget() {
   const margin = 40;
-  // Случайная точка и случайный угол
   const angle = Math.random() * Math.PI * 2;
   const radius = 100 + Math.random() * (Math.min(window.innerWidth, window.innerHeight) / 2 - 100);
   const cx = margin + Math.random() * (window.innerWidth - margin * 2);
@@ -76,16 +106,24 @@ function pickNewTarget() {
   target.y = cy + Math.sin(angle) * radius;
 }
 
+function pickNewTarget2() {
+  const margin = 40;
+  const angle = Math.random() * Math.PI * 2;
+  const radius = 120 + Math.random() * (Math.min(window.innerWidth, window.innerHeight) / 2 - 120);
+  const cx = margin + Math.random() * (window.innerWidth - margin * 2);
+  const cy = margin + Math.random() * (window.innerHeight - margin * 2);
+  target2.x = cx + Math.cos(angle) * radius;
+  target2.y = cy + Math.sin(angle) * radius;
+}
+
 function animatePointer() {
   const now = Date.now();
   if (now - lastMove > 1200) {
     autoMove = true;
   }
   if (autoMove) {
-    // Плавно летим к цели
     pointer.x += (target.x - pointer.x) * 0.04;
     pointer.y += (target.y - pointer.y) * 0.04;
-    // Если близко к цели — новая цель
     if (Math.hypot(pointer.x - target.x, pointer.y - target.y) < 24) {
       pickNewTarget();
     }
@@ -98,6 +136,24 @@ function animatePointer() {
 }
 animatePointer();
 
+function animatePointer2() {
+  const now = Date.now();
+  if (now - lastMove > 1200) {
+    pointer2.x += (target2.x - pointer2.x) * 0.04;
+    pointer2.y += (target2.y - pointer2.y) * 0.04;
+    if (Math.hypot(pointer2.x - target2.x, pointer2.y - target2.y) < 24) {
+      pickNewTarget2();
+    }
+  }
+  if (pc2.uniforms && pc2.uniforms.uPointer) {
+    pc2.uniforms.uPointer.value.x = pointer2.x;
+    pc2.uniforms.uPointer.value.y = pointer2.y;
+  }
+  requestAnimationFrame(animatePointer2);
+}
+animatePointer2();
+
+// --- Цвета только для первой линии ---
 let colorTargets = pc.uniforms.uColors.value.map((c, i) => {
   const hex = c.getHex();
   return {
@@ -129,7 +185,7 @@ updateColorsLerp();
 
 document.body.addEventListener('click', () => {
   colorTargets.forEach(c => c.target = hexToRgb(baseColors[Math.floor(Math.random() * baseColors.length)]));
-  pc.uniforms.uCoordScale.value = 0.001 + Math.random() * 2;
+  pc.uniforms.uCoordScale.value = window.innerWidth > 900 ? 0.18 : 0.25;
   pc.uniforms.uNoiseIntensity.value = 0.0001 + Math.random() * 0.01;
-  pc.uniforms.uPointSize.value = 1 + Math.random() * 10;
+  pc.uniforms.uPointSize.value = window.innerWidth > 900 ? (1 + Math.random() * 10) : (1 + Math.random() * 5);
 })
